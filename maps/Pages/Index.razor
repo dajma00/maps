@@ -1,9 +1,130 @@
-﻿@page "/"
+﻿
+@page "/"
+@using System.Text.Json
+@using System.Text.Json.Serialization;
+@inject HttpClient http
 
 <PageTitle>Index</PageTitle>
 
-<h1>Hello, world!</h1>
+<SfMaps @ref="map" Background="transparent">
+    <MapsAreaSettings Background="transparent" />
+    <MapsZoomSettings Enable="true" EnablePanning="true">
 
-Welcome to your new app.
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+    </MapsZoomSettings>
+    
+    <MapsLayers>
+        <MapsLayer ShapeData='new {dataOptions= "https://cdn.syncfusion.com/maps/map-data/world-map.json"}' TValue="string">
+            <MapsMarkerSettings>
+                <MapsMarker Visible="true" DataSource="earthquakes.Features" Height="15" Width="15" TValue="Geometry">
+                </MapsMarker>
+            </MapsMarkerSettings>
+        </MapsLayer>
+        
+    </MapsLayers>
+
+    
+
+</SfMaps>
+@code {
+    SfMaps map;
+    string apiResponse;
+
+
+    public class Metadata
+    {
+        public long Generated { get; set; }
+        public string url { get; set; }
+        public string title { get; set; }
+        public int status { get; set; }
+        public string api { get; set; }
+        public int count { get; set; }
+    }
+
+    public class Properties
+    {
+        [JsonPropertyName("mag")]
+        public double Magnitude { get; set; }
+        [JsonPropertyName("place")]
+        public string Place { get; set; }
+        public object Time { get; set; }
+        public object Updated { get; set; }
+        public object Tz { get; set; }
+        public string Url { get; set; }
+        public string Detail { get; set; }
+        public int? Felt { get; set; }
+        public double? Cdi { get; set; }
+        public double? Mmi { get; set; }
+        public string Alert { get; set; }
+        public string Status { get; set; }
+        public int Tsunami { get; set; }
+        public int Sig { get; set; }
+        public string Net { get; set; }
+        public string Code { get; set; }
+        public string Ids { get; set; }
+        public string Sources { get; set; }
+        public string Types { get; set; }
+        public int? Nst { get; set; }
+        public double? Dmin { get; set; }
+        public double Rms { get; set; }
+        public double? Gap { get; set; }
+        public string MagType { get; set; }
+        public string Type { get; set; }
+        public string Title { get; set; }
+    }
+
+    public class Geometry
+    {
+        public string type { get; set; }
+        public List<double> coordinates { get; set; } //[0] is longitude, [1] is latitude, [2] is depth
+        public double Longitude
+        {
+            get
+            {
+                return this.coordinates[0];
+            }
+
+        }
+
+        public double Latitude
+        {
+            get
+            {
+                return this.coordinates[1];
+            }
+
+        }
+
+        public double Depth
+        {
+            get
+            {
+                return this.coordinates[2];
+            }
+        }
+    }
+
+    public class Feature
+    {
+        public string type { get; set; }
+        public Properties properties { get; set; }
+        public Geometry geometry { get; set; }
+        public string id { get; set; }
+    }
+
+    public class Earthquakes
+    {
+        public string Type { get; set; }
+        public Metadata Metadata { get; set; }
+        public List<Feature> Features { get; set; }
+        public List<double> Bbox { get; set; }
+    }
+
+    Earthquakes earthquakes = new();
+
+    protected async override Task OnInitializedAsync()
+    {
+        earthquakes = await http.GetFromJsonAsync<Earthquakes>("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson");
+       
+    }
+}
